@@ -53,7 +53,7 @@ class LandingScreen extends StatelessWidget {
                   hintText: "e.g. Sarah Khalid",
                   controller: controller,
                   validator: (String? value){
-                    if( value.isNullOrEmpty || !value!.contains(''))
+                    if( value.isNullOrEmpty || !value!.contains(' '))
                       {
                         return 'Enter Your Full Name With 1 Space';
                       }

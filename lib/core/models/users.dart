@@ -9,9 +9,9 @@ class Users {
 
   static User? currentUser;
   static List<User> _usersData=[];
+  static SharedPreferences? _prefs;
 
   static get isSignedin => (currentUser != null);
-
   static Future<void> addUser(User person) async{
     if(_usersData.isEmpty){
       person.userId=0;
@@ -22,7 +22,7 @@ class Users {
     else{
       bool newUser=true;
       for (var item in _usersData) {
-        if(item == person)
+        if(item.fullName == person.fullName)
         {
           newUser=false;
           currentUser=person;
@@ -39,20 +39,13 @@ class Users {
 
     }
   }
-
   static Future<bool> addTaskToCurrentUser(Task userNewTask) async{ // returns true if added successfully only
     if(!isSignedin){ return false; }
     if( currentUser!.tasks.isEmpty){
       userNewTask.id=0;
-      currentUser!.tasks.add(userNewTask);
+      currentUser!.tasks.add(userNewTask); // Update Current User
+      _usersData[currentUser!.userId!].tasks.add(userNewTask); //Update user info in usersData
 
-      //Update user info in usersData
-      for (var item in _usersData) {
-        if(item.fullName == currentUser!.fullName)
-        {
-          item.tasks=currentUser!.tasks;
-        }
-      }
       //Updating Local Storage
       await setLocalStorage();
       return true;
@@ -68,32 +61,20 @@ class Users {
 
       // Update Current User info
       userNewTask.id = currentUser!.tasks.length;
-      currentUser!.tasks.add(userNewTask);
+      currentUser!.tasks.add(userNewTask); // Update Current User
+      _usersData[currentUser!.userId!].tasks.add(userNewTask); //Update user info in usersData
 
-      //Update user info in usersData
-      for (var item in _usersData) {
-        if(item.fullName == currentUser!.fullName)
-        {
-          item.tasks=currentUser!.tasks;
-        }
-      }
       await setLocalStorage();
       return true;
     }
     return false;
   }
-
   static Future<void> signOut() async{
     if(!isSignedin){return;}
     {
       currentUser = null;
       await setLocalStorage();
     }
-  }
-
-  static Future<void> clearLocalStorage() async{
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('usersDataStorage');
   }
 
   static void display(){
@@ -104,28 +85,45 @@ class Users {
     }
   }
 
-  static Future<void> setLocalStorage() async{
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('usersDataStorage');
-    await prefs.setString('usersDataStorage', jsonEncode(Users.toMap()));
-
+  // Getters
+  static List<Task>? getAllTasks(){
+    return _usersData[currentUser!.userId!].tasks;
   }
-  static Future<void> getFromLocalStorage() async{
+  static List<Task>? getTodoTasks(){
+    return _usersData[currentUser!.userId!].tasks.where((item) => item.isDone ==false).toList();
+  }
+  static List<Task>? getCompletedTasks(){
+    return _usersData[currentUser!.userId!].tasks.where((item) => item.isDone ==true).toList();
+  }
+  static List<Task>? getHighPriorityTasks(){
+    return _usersData[currentUser!.userId!].tasks.where((item) => item.highPriority ==true).toList();
+  }
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-     String? data = prefs.getString('usersDataStorage');
+
+  // LocalStorage Operations
+  static Future<void> initLocalStorage() async{
+    _prefs = await SharedPreferences.getInstance();
+  }
+  static Future<void> setLocalStorage() async{
+    await _prefs!.remove('usersDataStorage');
+    await _prefs!.setString('usersDataStorage', jsonEncode(Users.toMap()));
+  }
+  static getFromLocalStorage(){
+     String? data = _prefs!.getString('usersDataStorage');
      if(data != null)
        { Users.fromMap(jsonDecode(data)); }
-     Users.display();
+  }
+  static Future<void> clearLocalStorage() async{
+    await _prefs!.remove('usersDataStorage');
   }
 
+  // From-Map And To-Map Converting
   static Map<String, dynamic> toMap() {
     return {
       'currentUser': currentUser?.toMap(),
       'usersData': _usersData.map((user) => user.toMap()).toList(),
     };
   }
-
   static void fromMap(Map<String, dynamic> map) {
     currentUser = map['currentUser'] != null ? User.fromMap(map['currentUser']) : null;
     _usersData = (map['usersData'] as List<dynamic>?)

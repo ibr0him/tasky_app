@@ -6,10 +6,10 @@ import 'package:tasky_app/pages/navbar_screen.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
-  Users.display();
-  await Users.getFromLocalStorage();
-  Users.display();
-  print("Karmalla25");
+
+  await Users.initLocalStorage();
+  Users.getFromLocalStorage();
+
   runApp(const MyApp());
 }
 
