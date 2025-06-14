@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.tasky_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "29.0.13113456"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -37,7 +37,7 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-    ndkVersion = "27.0.12077973"
+
 }
 
 flutter {

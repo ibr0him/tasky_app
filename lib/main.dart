@@ -1,30 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:tasky_app/core/models/users.dart';
-import 'package:tasky_app/core/themes/theme.dart';
-import 'package:tasky_app/pages/landing_screen.dart';
-import 'package:tasky_app/pages/navbar_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:tasky_app/core/constants/storage_key.dart';
+import 'package:tasky_app/core/services/preferences_manager.dart';
+import 'package:tasky_app/core/theme/dark_theme.dart';
+import 'package:tasky_app/core/theme/light_theme.dart';
+import 'package:tasky_app/core/theme/theme_controller.dart';
+import 'package:tasky_app/features/navigation/main_screen.dart';
+import 'package:tasky_app/features/profile/user_controller.dart';
+import 'package:tasky_app/features/welcome/welcome_screen.dart';
 
-void main() async{
+import 'features/home/home_controller.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Users.initLocalStorage();
-  Users.getFromLocalStorage();
+  await PreferencesManager().init();
+  ThemeController().init();
 
-  runApp(const MyApp());
+  String? username = PreferencesManager().getString(StorageKey.username);
+
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => TaskController()..init()),
+      ChangeNotifierProvider(create: (_) => UserController()..loadUserData()),
+    ],
+
+      child: MyApp(username: username)));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required this.username});
+
+  final String? username;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tasky App',
-      theme: AppTheme.darkTheme,
-      debugShowCheckedModeBanner: false,
-      home: Users.isSignedin ? const NavbarScreen() : LandingScreen()
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeNotifier,
+      builder: (context, ThemeMode themeMode, Widget? child) {
+        return MaterialApp(
+          title: 'Tasky App',
+          debugShowCheckedModeBanner: false,
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: themeMode,
+          home: username == null ? WelcomeScreen() : MainScreen(),
+        );
+      },
     );
   }
 }
-
 
